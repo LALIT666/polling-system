@@ -10,6 +10,8 @@ import cookieParser from "cookie-parser";
 dotenv.config();
 
 import prisma from "../db/index";
+import axios from "axios";
+import { Response } from "undici-types";
 
 const app = express();
 app.use(cookieParser());
@@ -423,8 +425,93 @@ app.get("/monitor/:id/checks", verifyToken, async (req, res) => {
   }
 });
 
+////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+// ** POLLING ENGINE **
+// ! POLLING ENGINE
+
+function startPollingEngine() {
+  setInterval(async () => {
+    console.log("⏳ Polling Engine Running...");
+    const monitorsIsActive = await prisma.monitor.findMany({
+      where: {
+        isActive: true,
+      },
+    });
+
+    if (monitorsIsActive.length === 0) {
+      return;
+    }
+
+    for (const monitor of monitorsIsActive) {
+      try {
+        if (
+          Date.now() - new Date(monitor.lastCheckedAt).getTime() >
+          monitor.interval * 60 * 1000
+        ) {
+          try {
+            const startTime = Date.now();
+            const pingingTheMonitorUrl = await axios.get(monitor.url);
+
+            const endTime = Date.now();
+            const responseTime = endTime - startTime;
+
+            await prisma.check.create({
+              data: {
+                status: "UP",
+                responseTime_ms: responseTime,
+                statusCode: pingingTheMonitorUrl.status,
+                monitorId: monitor.id,
+              },
+            });
+
+            await prisma.monitor.update({
+              where: {
+                id: monitor.id,
+              },
+              data: {
+                lastCheckedAt: new Date(),
+              },
+            });
+          } catch (error) {
+            console.error(`❌ Error pinging ${monitor.url}:`, error);
+
+            await prisma.check.create({
+              data: {
+                status: "DOWN",
+                responseTime_ms: 0,
+                statusCode: 500,
+                monitorId: monitor.id,
+              },
+            });
+
+            await prisma.monitor.update({
+              where: { id: monitor.id },
+              data: { lastCheckedAt: new Date() },
+            });
+
+            continue;
+          }
+        } else {
+          continue;
+        }
+      } catch (error) {
+        console.error("Error in PollingEngine loop:", error);
+        continue;
+      }
+    }
+  }, 60000);
+}
+
+////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+
 app.listen(PORT, () => {
   console.log(`✅ Server is Runing on http://localhost:${PORT}`);
+  //! calling the startPollingEngine() function
+  startPollingEngine();
 });
 
 const UserZodSchema = z.object({
