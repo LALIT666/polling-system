@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+
+model User {
+  id              String    @id @default(uuid())
+  username        String
+  email           String    @unique
+  hashedPassword  String
+  createdAt       DateTime  @default(now())
+  
+
+  monitors        Monitor[]
+
+  @@index([id, email])
+  @@map("users")
+}
+
+
+
+model Monitor {
+  id            String    @id @default(uuid())
+  url           String    
+  name          String?
+  isActive      Boolean       @default(true)
+  interval      Int           @default(5) 
+  lastCheckedAt DateTime      @default(now())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  checks        Check[]
+
+@@map("monitors")
+}
+
+
+model Check {
+  id              String    @id   @default(uuid())
+  status          StatusChecking
+  responseTime_ms Int   
+  statusCode      Int?
+  checkedAt       DateTime  @default(now())
+  monitorId       String
+
+  monitor         Monitor   @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  
+
+  @@map("checks")
+
+
+}
+
+
+enum StatusChecking {
+  UP
+  DOWN
+  UNKNOWN
+
+
+}

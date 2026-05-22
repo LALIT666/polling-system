@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "monitors" ADD COLUMN     "lastCheckedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
