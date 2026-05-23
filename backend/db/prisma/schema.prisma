@@ -48,21 +48,31 @@ model Monitor {
 }
 
 
+model Region {
+  id        String   @id @default(uuid())
+  name      String   // e.g., "US East", "Mumbai", "Europe"
+  code      String   // e.g., "us-east-1", "ap-south-1"
+  checks    Check[]
+  
+  @@map("regions")
+}
+
+
 model Check {
-  id              String    @id   @default(uuid())
+  id              String          @id @default(uuid())
   status          StatusChecking
   responseTime_ms Int   
   statusCode      Int?
-  checkedAt       DateTime  @default(now())
+  checkedAt       DateTime        @default(now())
   monitorId       String
-
-  monitor         Monitor   @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  regionId        String?         // ✅ Naya add kiya (Optional rakha hai, taaki purana code na tute)
   
-
+  monitor         Monitor         @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  region          Region?         @relation(fields: [regionId], references: [id]) // ✅ Region link kiya
+  
   @@map("checks")
-
-
 }
+
 
 
 
