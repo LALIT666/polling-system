@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -14,40 +13,50 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model user {
+
+model User {
   id          String      @id   @default(uuid())
   username    String      @unique
   password    String
-  websites    website[]
+  websites    Website[]
+
+  @@map("users")
 } 
 
-model website {
+model Website {
   id            String  @id    @default(uuid()) 
   url           String
   user_id       String
   time_added     DateTime
-  ticks         website_tick[]
-  user          user    @relation(fields: [user_id], references: [id])
+  ticks         WebsiteTick[]
+  user          User    @relation(fields: [user_id], references: [id])
+
+  @@map("websites")
 }
 
-model region {
+model Region {
   id            String  @id    @default(uuid()) 
   name          String
-  tickes        website_tick[]
+  tickes        WebsiteTick[]
+
+  @@map("regions")
 }
 
-model website_tick {
+model WebsiteTick {
   id                      String  @id     @default(uuid())
   response_time_ms        Int
-  status                  website_status
-  region                  region     @relation(fields: [region_id], references: [id])
-  website                 website     @relation(fields: [website_id], references: [id])     
+  status                  WebsiteStatus
+  region                  Region     @relation(fields: [region_id], references: [id])
+  website                 Website     @relation(fields: [website_id], references: [id])     
   region_id               String
   website_id              String
   createdAt               DateTime    @default(now())
+
+
+  @@map("websiteTicks")
 }
 
-enum website_status {
+enum WebsiteStatus {
   Up
   Down
   Unknown

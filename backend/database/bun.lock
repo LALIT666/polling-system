@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "db",
+      "name": "database",
       "dependencies": {
         "prisma": "6.3.1",
       },
