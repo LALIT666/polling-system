@@ -6,6 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -13,73 +14,41 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model user {
+  id          String      @id   @default(uuid())
+  username    String      @unique
+  password    String
+  websites    website[]
+} 
 
-
-
-model User {
-  id              String    @id @default(uuid())
-  username        String
-  email           String    @unique
-  hashedPassword  String
-  createdAt       DateTime  @default(now())
-  
-
-  monitors        Monitor[]
-
-  @@index([id, email])
-  @@map("users")
+model website {
+  id            String  @id    @default(uuid()) 
+  url           String
+  user_id       String
+  time_added     DateTime
+  ticks         website_tick[]
+  user          user    @relation(fields: [user_id], references: [id])
 }
 
-
-
-model Monitor {
-  id            String    @id @default(uuid())
-  url           String    
-  name          String?
-  isActive      Boolean       @default(true)
-  interval      Int           @default(5) 
-  lastCheckedAt DateTime      @default(now())
-  userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  checks        Check[]
-
-@@map("monitors")
+model region {
+  id            String  @id    @default(uuid()) 
+  name          String
+  tickes        website_tick[]
 }
 
-
-model Region {
-  id        String   @id @default(uuid())
-  name      String   // e.g., "US East", "Mumbai", "Europe"
-  code      String   // e.g., "us-east-1", "ap-south-1"
-  checks    Check[]
-  
-  @@map("regions")
+model website_tick {
+  id                      String  @id     @default(uuid())
+  response_time_ms        Int
+  status                  website_status
+  region                  region     @relation(fields: [region_id], references: [id])
+  website                 website     @relation(fields: [website_id], references: [id])     
+  region_id               String
+  website_id              String
+  createdAt               DateTime    @default(now())
 }
 
-
-model Check {
-  id              String          @id @default(uuid())
-  status          StatusChecking
-  responseTime_ms Int   
-  statusCode      Int?
-  checkedAt       DateTime        @default(now())
-  monitorId       String
-  regionId        String?         // ✅ Naya add kiya (Optional rakha hai, taaki purana code na tute)
-  
-  monitor         Monitor         @relation(fields: [monitorId], references: [id], onDelete: Cascade)
-  region          Region?         @relation(fields: [regionId], references: [id]) // ✅ Region link kiya
-  
-  @@map("checks")
-}
-
-
-
-
-enum StatusChecking {
-  UP
-  DOWN
-  UNKNOWN
-
-
+enum website_status {
+  Up
+  Down
+  Unknown
 }
