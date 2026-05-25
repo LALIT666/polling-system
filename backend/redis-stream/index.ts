@@ -39,3 +39,23 @@ export async function xAddBulk(websites: WebsiteEvent[]) {
   const result = await pipeline.exec();
   return result;
 }
+
+export async function xReadGroup(
+  consumerGroup: string,
+  workId: string,
+): Promise<MessageType[] | undefined> {
+  const res = await client.xReadGroup(
+    consumerGroup,
+    workId,
+    {
+      key: STREAM_NAME,
+      id: ">",
+    },
+    { COUNT: 5 },
+  );
+
+  //@ts-ignore
+  const messages: MessageType[] | undefined = res?.[0]?.messages;
+
+  return messages;
+}
