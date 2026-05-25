@@ -61,3 +61,7 @@ export async function xReadGroup(
 
   return response[0]?.messages as StreamMessage[];
 }
+
+export async function xAck(messageId: string, consumerGroup: string) {
+  return await client.xAck(STREAM_NAME, consumerGroup, messageId);
+}
