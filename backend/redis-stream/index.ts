@@ -34,3 +34,30 @@ export async function xAddBulk(websites: WebsiteEvent[]) {
 
   return await pipeline.exec();
 }
+
+export async function xReadGroup(
+  consumerGroup: string,
+  workerId: string,
+  count = 5,
+): Promise<StreamMessage[]> {
+  const response = await client.xReadGroup(
+    consumerGroup,
+    workerId,
+    {
+      key: STREAM_NAME,
+      id: ">",
+    },
+    {
+      COUNT: count,
+      BLOCK: 5000,
+    },
+  );
+
+  if (!response) {
+    return [];
+  }
+
+  //@ts-ignores
+
+  return response[0]?.messages as StreamMessage[];
+}
