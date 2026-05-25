@@ -20,3 +20,7 @@ client.on("error", (err) => {
 });
 
 await client.connect();
+
+export async function xAdd(data: WebsiteEvent) {
+  return await client.xAdd(STREAM_NAME, "*", data);
+}
