@@ -8,6 +8,8 @@ const app = express();
 
 app.use(express.json());
 
+//middleware  -- authMiddleware
+
 export function authMiddleware(
   req: Request,
   res: Response,
@@ -76,9 +78,9 @@ app.get("/status/:websiteId", authMiddleware, async (req, res) => {
 });
 
 app.post("/user/signup", async (req, res) => {
-  const data = AuthInput.safeParse(req.body);
-  if (!data.success) {
-    console.log(data.error.toString());
+  const parsedData = AuthInput.safeParse(req.body);
+  if (!parsedData.success) {
+    console.log(parsedData.error.toString());
     res.status(403).send("");
     return;
   }
@@ -86,8 +88,8 @@ app.post("/user/signup", async (req, res) => {
   try {
     let user = await prismaClient.user.create({
       data: {
-        username: data.data.username,
-        password: data.data.password,
+        username: parsedData.data.username,
+        password: parsedData.data.password,
       },
     });
     res.json({
@@ -100,19 +102,19 @@ app.post("/user/signup", async (req, res) => {
 });
 
 app.post("/user/signin", async (req, res) => {
-  const data = AuthInput.safeParse(req.body);
-  if (!data.success) {
+  const parsedData = AuthInput.safeParse(req.body);
+  if (!parsedData.success) {
     res.status(403).send("");
     return;
   }
 
   let user = await prismaClient.user.findFirst({
     where: {
-      username: data.data.username,
+      username: parsedData.data.username,
     },
   });
 
-  if (user?.password !== data.data.password) {
+  if (user?.password !== parsedData.data.password) {
     res.status(403).send("");
     return;
   }
