@@ -17,9 +17,25 @@ const client = await createClient()
   })
   .connect();
 
-export async function xAdd({ url, id }: WebsiteEvent) {
-  await client.xAdd(STREAM_NAME, "*", {
+async function xAdd({ url, id }: WebsiteEvent) {
+  const res = await client.xAdd(STREAM_NAME, "*", {
     url,
     id,
   });
+
+  return res;
+}
+
+export async function xAddBulk(websites: WebsiteEvent[]) {
+  const pipeline = client.multi();
+
+  for (let i = 0; i < websites.length; i++) {
+    pipeline.xAdd(STREAM_NAME, "*", {
+      url: websites[i]!.url,
+      id: websites[i]!.id,
+    });
+  }
+
+  const result = await pipeline.exec();
+  return result;
 }
