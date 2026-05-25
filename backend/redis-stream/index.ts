@@ -1,61 +1,22 @@
 import { createClient } from "redis";
 
-type WebsiteEvent = { url: string; id: string };
-type MessageType = {
+type WebsiteEvent = {
+  url: string;
   id: string;
-  message: {
-    url: string;
-    id: string;
-  };
 };
 
+export type StreamMessage = {
+  id: string;
+  message: WebsiteEvent;
+};
 const STREAM_NAME = "betteruptime:websites";
 
-const client = await createClient()
-  .on("error", (err) => {
-    console.log("Redis Client Error", err);
-  })
-  .connect();
+export const client = createClient({
+  url: "redis://localhost:6379",
+});
 
-async function xAdd({ url, id }: WebsiteEvent) {
-  const res = await client.xAdd(STREAM_NAME, "*", {
-    url,
-    id,
-  });
+client.on("error", (err) => {
+  console.error("Redis Client Error:", err);
+});
 
-  return res;
-}
-
-export async function xAddBulk(websites: WebsiteEvent[]) {
-  const pipeline = client.multi();
-
-  for (let i = 0; i < websites.length; i++) {
-    pipeline.xAdd(STREAM_NAME, "*", {
-      url: websites[i]!.url,
-      id: websites[i]!.id,
-    });
-  }
-
-  const result = await pipeline.exec();
-  return result;
-}
-
-export async function xReadGroup(
-  consumerGroup: string,
-  workId: string,
-): Promise<MessageType[] | undefined> {
-  const res = await client.xReadGroup(
-    consumerGroup,
-    workId,
-    {
-      key: STREAM_NAME,
-      id: ">",
-    },
-    { COUNT: 5 },
-  );
-
-  //@ts-ignore
-  const messages: MessageType[] | undefined = res?.[0]?.messages;
-
-  return messages;
-}
+await client.connect();
